@@ -87,22 +87,20 @@ func NewRing(nodes []*Node) *Ring {
 	return r
 }
 
-// Get node by key from ring.
-// Returns nil if the ring is empty.
-func (r *Ring) Get(key string) *Node {
+func (r *Ring) getByHash(hash uint32) int {
 	if len(r.nodes) == 0 {
-		return nil
+		return -1
 	}
 	if len(r.nodes) == 1 {
-		return r.nodes[0]
+		return 0
 	}
 	left := 0
 	right := len(r.nodes)
-	hash := alignHash(key, 0)
+
 	for {
 		mid := (left + right) / 2
 		if mid == len(r.nodes) {
-			return r.nodes[0]
+			return 0
 		}
 		var p uint32
 		m := r.nodes[mid].hash
@@ -112,7 +110,7 @@ func (r *Ring) Get(key string) *Node {
 			p = r.nodes[mid-1].hash
 		}
 		if hash < m && hash > p {
-			return r.nodes[mid]
+			return mid
 		}
 		if m < hash {
 			left = mid + 1
@@ -120,7 +118,37 @@ func (r *Ring) Get(key string) *Node {
 			right = mid - 1
 		}
 		if left > right {
-			return r.nodes[0]
+			return 0
 		}
 	}
+}
+
+// Get node by key from ring.
+// Returns nil if the ring is empty.
+func (r *Ring) Get(key string) *Node {
+	ind := r.getByHash(alignHash(key, 0))
+	if ind == -1 {
+		return nil
+	}
+
+	return r.nodes[ind]
+}
+
+// GetIgnoringFailed implements a failover when certain nodes are no longer responsive:
+// those won't be used.
+func (r *Ring) GetIgnoringFailed(key string, bannedNodes map[string]struct{}) *Node {
+	ind := r.getByHash(alignHash(key, 0))
+	if ind == -1 {
+		return nil
+	}
+
+	for i := (ind + 1) % len(r.nodes); i != ind; i = (i + 1) % len(r.nodes) {
+		// keep going right until a responsive node is found
+		if _, ok := bannedNodes[r.nodes[i].key]; !ok {
+			return r.nodes[i]
+		}
+	}
+
+	// we have gone full circle => everything is banned
+	return nil
 }
