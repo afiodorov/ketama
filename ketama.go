@@ -142,9 +142,7 @@ func (r *Ring) GetIgnoringFailed(key string, failedNodes map[string]struct{}) *N
 		return nil
 	}
 
-	prev := (ind - 1 + len(r.nodes)) % len(r.nodes)
-
-	for i := ind; i != prev; i = (i + 1) % len(r.nodes) {
+	for i, j := ind, 0; j < len(r.nodes); i, j = (i+1)%len(r.nodes), j+1 {
 		// keep going right until a responsive node is found
 		if _, ok := failedNodes[r.nodes[i].key]; !ok {
 			return r.nodes[i]
