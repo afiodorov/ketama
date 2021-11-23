@@ -136,19 +136,21 @@ func (r *Ring) Get(key string) *Node {
 
 // GetIgnoringFailed implements a failover when certain nodes are no longer responsive:
 // those won't be used.
-func (r *Ring) GetIgnoringFailed(key string, bannedNodes map[string]struct{}) *Node {
+func (r *Ring) GetIgnoringFailed(key string, failedNodes map[string]struct{}) *Node {
 	ind := r.getByHash(alignHash(key, 0))
 	if ind == -1 {
 		return nil
 	}
 
-	for i := (ind + 1) % len(r.nodes); i != ind; i = (i + 1) % len(r.nodes) {
+	prev := (ind - 1 + len(r.nodes)) % len(r.nodes)
+
+	for i := ind; i != prev; i = (i + 1) % len(r.nodes) {
 		// keep going right until a responsive node is found
-		if _, ok := bannedNodes[r.nodes[i].key]; !ok {
+		if _, ok := failedNodes[r.nodes[i].key]; !ok {
 			return r.nodes[i]
 		}
 	}
 
-	// we have gone full circle => everything is banned
+	// we have gone full circle => everything is failed
 	return nil
 }

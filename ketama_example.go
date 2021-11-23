@@ -26,7 +26,7 @@ func main() {
 	fmt.Printf("Get a server by key \"key1\" again: %v\n", ring.Get("key1"))
 
 	fmt.Printf("Get a server by key \"key1\" after assigned node goes down: %v\n", ring.GetIgnoringFailed("key1", map[string]struct{}{
-		"127.0.0.1:8000": struct{}{},
+		"127.0.0.1:8001": struct{}{},
 	}))
 
 	fmt.Printf("Get a server by key \"key1\" after all nodes are down: %v\n", ring.GetIgnoringFailed("key1", map[string]struct{}{
