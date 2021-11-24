@@ -91,36 +91,8 @@ func (r *Ring) getByHash(hash uint32) int {
 	if len(r.nodes) == 0 {
 		return -1
 	}
-	if len(r.nodes) == 1 {
-		return 0
-	}
-	left := 0
-	right := len(r.nodes)
 
-	for {
-		mid := (left + right) / 2
-		if mid == len(r.nodes) {
-			return 0
-		}
-		var p uint32
-		m := r.nodes[mid].hash
-		if mid == 0 {
-			p = 0
-		} else {
-			p = r.nodes[mid-1].hash
-		}
-		if hash < m && hash > p {
-			return mid
-		}
-		if m < hash {
-			left = mid + 1
-		} else {
-			right = mid - 1
-		}
-		if left > right {
-			return 0
-		}
-	}
+	return sort.Search(len(r.nodes), func(i int) bool { return r.nodes[i].hash > hash }) % len(r.nodes)
 }
 
 // Get node by key from ring.
