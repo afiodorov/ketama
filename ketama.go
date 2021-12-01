@@ -5,6 +5,7 @@ package ketama
 
 import (
 	"crypto/md5"
+	"encoding/binary"
 	"fmt"
 	"sort"
 )
@@ -52,10 +53,8 @@ type Ring struct {
 // alignHash returns hash value with aligment.
 func alignHash(key string, align int) uint32 {
 	b := md5.Sum([]byte(key))
-	return ((uint32(b[3+align*4]&0xff) << 24) |
-		(uint32(b[2+align*4]&0xff) << 16) |
-		(uint32(b[1+align*4]&0xff) << 8) |
-		(uint32(b[0+align*4] & 0xff)))
+
+	return binary.LittleEndian.Uint32(b[align*4 : 4+align*4])
 }
 
 // NewRing creates a new Ring.
